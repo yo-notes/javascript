@@ -20,7 +20,7 @@ class JPromise {
         return;
       }
 
-      if (res && (typeof res.then === 'function')) {
+      if (res && typeof res.then === 'function') {
         return res.then(resolve, reject);
       }
 
@@ -92,21 +92,66 @@ class JPromise {
         return res;
       },
       err => {
-        console.log(err)
+        console.log(err);
         cb();
         throw err;
       }
     );
   }
 
-  static all(list) {}
+  static all(list) {
+    return new JPromise((resolve, reject) => {
+      const resolvedList = [];
+      let resolvedCnt = 0;
+      list.forEach((p, idx) => {
+        p.then(
+          res => {
+            resolvedCnt++;
+            resolvedList[idx] = res;
+            if (resolvedCnt === list.length) {
+              resolve(resolvedList);
+            }
+          },
+          error => {
+            reject(error);
+          }
+        );
+      });
+    });
+  }
 
-  static any(list) {}
-
-  static race(list) {}
+  static race(list) {
+    return new JPromise((resolve, reject) => {
+      list.forEach((p, idx) => {
+        p.then(
+          res => {
+            resolve(res);
+          },
+          error => {
+            reject(error);
+          }
+        );
+      });
+    });
+  }
 
   static resolve(value) {
-    if (value instanceof Promise) {
+    if (value instanceof JPromise) {
+      return value;
+    } else {
+      return new JPromise((resolve, reject) => {
+        resolve(value);
+      });
+    }
+  }
+
+  static resolve(value) {
+    if (value instanceof JPromise) {
+      return value;
+    } else {
+      return new JPromise((resolve, reject) => {
+        reject(value);
+      });
     }
   }
 }
